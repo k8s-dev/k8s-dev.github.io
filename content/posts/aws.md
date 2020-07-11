@@ -33,7 +33,8 @@ So, around 20 days after starting my job search, I eventually landed a job offer
   
   
 
-{{< figure src="/posts/image.jpg" title="amazon.jobs" >}}
+{{< figure src="/posts/amazon.png" title="amazon.jobs" >}}
+
 
 ### How I Landed Calls from Google and Amazon
   
@@ -84,7 +85,7 @@ Then after a wait of a couple of days, I received a call from my recruiter that 
 
 {{< figure src="/posts/happiness.jpg" title="" >}}
 
-<a href='https://www.freepik.com/free-photos-vectors/background'>Background photo created by jcomp - www.freepik.com</a>
+<span>Photo by <a href="https://unsplash.com/@stanislas1?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Stan B</a> on <a href="https://unsplash.com/s/photos/happiness-small-pics?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>
 
 So, yes - I was able to crack the interviews at Amazon and land a job in the global pandemic situation, *all without any AWS certificate :P*  
 

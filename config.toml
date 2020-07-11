@@ -1,4 +1,4 @@
-baseURL = "http://example.com"
+baseURL = "https://k8s-dev.github.io"
 languageCode = "en-us"
 title = "k8s-dev"
 theme = "hugo-ink"

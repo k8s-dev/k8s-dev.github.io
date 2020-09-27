@@ -7,7 +7,7 @@ type: page
 
 Just short of 12 years of IT experience, deeply passionate about Cloud Native Eco-System governed by Cloud Native Computing Foundation (CNCF). I make my hands dirty with Kubernetes, DevSecOps and Cloud Infrastructure. Currently working at Amazon Web Services, India as Cloud Architect, helping solve difficult problems for Amazon's enterprise customers across various industrial segments.
 
-Maintainer for LitmusChaos which is now accepted as a CNCF sandbox project.  
+Co-Maintainer for LitmusChaos which is now accepted as a CNCF sandbox project.  
   
 I conceptualised the initiative to enrol my previous organisation at CNCF Silver Membership tier and to get Kubernetes Certified Service Provider (KCSP) Certification, it was a result of collaboration among various business units and came true with blessings of senior leadership team.
   

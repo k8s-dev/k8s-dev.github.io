@@ -3,6 +3,36 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>https://k8s-dev.github.io/posts/cert/</loc>
+    <lastmod>2020-10-17T07:12:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/tags/amazon/</loc>
+    <lastmod>2020-10-17T07:12:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/tags/aws/</loc>
+    <lastmod>2020-10-17T07:12:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/tags/certificate/</loc>
+    <lastmod>2020-10-17T07:12:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/posts/</loc>
+    <lastmod>2020-10-17T07:12:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/tags/</loc>
+    <lastmod>2020-10-17T07:12:05+05:30</lastmod>
+  </url>
+  
+  <url>
     <loc>https://k8s-dev.github.io/about/</loc>
     <lastmod>2020-07-08T07:17:11+05:30</lastmod>
   </url>
@@ -28,35 +58,15 @@
   </url>
   
   <url>
-    <loc>https://k8s-dev.github.io/posts/</loc>
-    <lastmod>2020-07-06T07:17:43+05:30</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://k8s-dev.github.io/tags/</loc>
-    <lastmod>2020-07-06T07:17:43+05:30</lastmod>
-  </url>
-  
-  <url>
     <loc>https://k8s-dev.github.io/posts/background/</loc>
     <lastmod>2020-06-18T07:17:27+05:30</lastmod>
   </url>
   
   <url>
-    <loc>https://k8s-dev.github.io/posts/cert/</loc>
-    <lastmod>2020-10-18T07:17:27+05:30</lastmod>
-  </url>
- 
-  <url>
     <loc>https://k8s-dev.github.io/tags/background/</loc>
     <lastmod>2020-06-18T07:17:27+05:30</lastmod>
   </url>
   
-  <url>
-    <loc>https://k8s-dev.github.io/tags/cert/</loc>
-    <lastmod>2020-10-18T07:17:27+05:30</lastmod>
-  </url>
-
   <url>
     <loc>https://k8s-dev.github.io/tags/whoami/</loc>
     <lastmod>2020-06-18T07:17:27+05:30</lastmod>

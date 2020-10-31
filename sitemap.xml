@@ -43,10 +43,20 @@
   </url>
   
   <url>
+    <loc>https://k8s-dev.github.io/posts/cert/</loc>
+    <lastmod>2020-10-18T07:17:27+05:30</lastmod>
+  </url>
+ 
+  <url>
     <loc>https://k8s-dev.github.io/tags/background/</loc>
     <lastmod>2020-06-18T07:17:27+05:30</lastmod>
   </url>
   
+  <url>
+    <loc>https://k8s-dev.github.io/tags/cert/</loc>
+    <lastmod>2020-10-18T07:17:27+05:30</lastmod>
+  </url>
+
   <url>
     <loc>https://k8s-dev.github.io/tags/whoami/</loc>
     <lastmod>2020-06-18T07:17:27+05:30</lastmod>

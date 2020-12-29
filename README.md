@@ -1,1 +1,1 @@
-# Blog post hosted at: k8s-dev.github.io
+#[k8s-dev.github.io](https://k8s-dev.github.io)

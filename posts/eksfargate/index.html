@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Setup a fully Private Amazon EKS  on AWS Fargate Cluster - k8s-dev</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="Setup a fully Private Amazon EKS  on AWS Fargate Cluster">
+<meta itemprop="description" content="...and this marks the begining of my tech publication journey!!">
+<meta itemprop="datePublished" content="2020-12-05T07:21:05+05:30" />
+<meta itemprop="dateModified" content="2020-12-05T07:21:05+05:30" />
+<meta itemprop="wordCount" content="1628">
+
+
+
+<meta itemprop="keywords" content="EKS,Fargate,kubernetes,VPC," />
+<meta property="og:title" content="Setup a fully Private Amazon EKS  on AWS Fargate Cluster" />
+<meta property="og:description" content="...and this marks the begining of my tech publication journey!!" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://k8s-dev.github.io/posts/eksfargate/" />
+<meta property="article:published_time" content="2020-12-05T07:21:05+05:30" />
+<meta property="article:modified_time" content="2020-12-05T07:21:05+05:30" />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Setup a fully Private Amazon EKS  on AWS Fargate Cluster"/>
+<meta name="twitter:description" content="...and this marks the begining of my tech publication journey!!"/>
+<link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" media="screen" href="https://k8s-dev.github.iocss/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://k8s-dev.github.iocss/main.css" />
+
+        <link id="dark-scheme" rel="stylesheet" type="text/css" href="https://k8s-dev.github.iocss/dark.css" />
+
+	<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+		<script src="https://k8s-dev.github.iojs/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper">
+		<div class="header">
+	
+	<h1 class="site-title"><a href="https://k8s-dev.github.io">k8s-dev</a></h1>
+	<div class="site-description"><p>Personal Blog of <a href="https://www.linkedin.com/in/jayeshtank">Jayesh Kumar Tank</a>.
+Opinions mentioned here are personal and not of my employer.</p><nav class="nav social">
+			<ul class="flat"><li><a href="https://github.com/k8s-dev" title="Github"><i data-feather="github"></i></a></li><li><a href="https://www.linkedin.com/in/jayeshtank" title="LinkedIn"><i data-feather="linkedin"></i></a></li><li><a href="https://twitter.com/jtankx" title="Twitter"><i data-feather="twitter"></i></a></li></ul>
+		</nav><span class="scheme-toggle"><a href="#" id="scheme-toggle"></a></div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/">Home</a>
+			</li>
+			
+			<li>
+				<a href="/posts">All posts</a>
+			</li>
+			
+			<li>
+				<a href="/about">About</a>
+			</li>
+			
+			<li>
+				<a href="/tags">Tags</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
+
+
+		<div class="post">
+			<div class="post-header">
+				
+					<div class="meta">
+						<div class="date">
+							<span class="day">05</span>
+							<span class="rest">Dec 2020</span>
+						</div>
+					</div>
+				
+				<div class="matter">
+					<h1 class="title">Setup a fully Private Amazon EKS  on AWS Fargate Cluster</h1>
+				</div>
+			</div>
+					
+			<div class="markdown">
+				<p>Regulated industries needs to host their Kubernetes workloads in most secure ways and fully private EKS on Fargate cluster attempts to solve this problem. Each pod running on Fargate has its own isolation boundary and does not share the underlying kernel, CPU resources, memory resources, or elastic network interface with another pod, which makes it secure from compliance point of view. With AWS Fargate, you no longer have to provision, configure, or scale groups of virtual machines to run containers. This removes the need to choose server types, decide when to scale your node groups, or optimise cluster packing.</p>
+<p>Source code for this post is hosted at : <a href="https://github.com/k8s-dev/private-eks-fargate">https://github.com/k8s-dev/private-eks-fargate</a></p>
+<h3 id="constraints">Constraints</h3>
+<ul>
+<li>No internet connectivity to Fargate cluster, no public subnets, except for bastion host</li>
+<li>Fully private access for Amazon EKS cluster&rsquo;s Kubernetes API server endpoint</li>
+<li>All AWS services communicates to this cluster using VPC or Gateway endpoints, essentially using private AWS access</li>
+</ul>
+<p>A <strong>VPC endpoint</strong> enables private connections between your VPC and supported AWS services. Traffic between VPC and the other AWS service does not leave the Amazon network. So this solution does not require an internet gateway or a NAT device except for bastion host subnet.</p>
+<h3 id="pre-requisite">Pre-Requisite</h3>
+<ul>
+<li>At least 2 private subnets in VPC because pods running on Fargate are only supported on private subnets</li>
+<li>A Bastion host in a public subnet in the same VPC to connect to EKS Fargate Cluster via kubectl</li>
+<li>AWS cli installed and configured with and default region on this bastion host</li>
+<li>VPC endpoints and Gateway endpoint for AWS Services that your cluster uses</li>
+</ul>
+<h3 id="design-diagram">Design Diagram</h3>
+<p>This diagram shows high level design for the implementation. EKS on Fargate cluster spans 2 private subnets and a bastion host is provisioned in public subnet with internet connectivity. All communication to EKS cluster will be initiated from this bastion host. EKS cluster is fully private and communicates to various AWS services via VPC and Gateway endpoints.</p>
+<figure>
+    <img src="/posts/design.png"/> <figcaption>
+            <h4>Architecture diagram</h4>
+        </figcaption>
+</figure>
+
+<h3 id="implementation-steps">Implementation Steps</h3>
+<p><strong>Fargate pod execution role</strong></p>
+<p>Create a Fargate pod execution role which allows Fargate infrastructure to make calls to AWS APIs on your behalf to do things like pull  container images from Amazon ECR or route logs to other AWS services.  Follow : <a href="https://docs.aws.amazon.com/eks/latest/userguide/fargate-getting-started.html#fargate-sg-pod-execution-role">https://docs.aws.amazon.com/eks/latest/userguide/fargate-getting-started.html#fargate-sg-pod-execution-role</a></p>
+<p><strong>Create AWS Services VPC Endpoints</strong></p>
+<p>Since we are rolling out fully private EKS on Fargate cluster, it should have private only access to various AWS Services such as to ECR, CloudWatch, loadbalancer, S3 etc.</p>
+<p>This step is <strong>essential</strong> to perform so that pods running on Fargate cluster can pull container images, push logs to CloudWatch and interact with loadbalancer.</p>
+<p>See the entire list here of endpoints that your cluster may use: <a href="https://docs.aws.amazon.com/eks/latest/userguide/private-clusters.html#vpc-endpoints-private-clusters">https://docs.aws.amazon.com/eks/latest/userguide/private-clusters.html#vpc-endpoints-private-clusters</a></p>
+<p>Setup the VPC endpoint and Gateway endpoints in the same VPC for the services that you plan to use in your EKS on Fargate cluster by following steps at :  <a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpce-interface.html#create-interface-endpoint">https://docs.aws.amazon.com/vpc/latest/userguide/vpce-interface.html#create-interface-endpoint</a></p>
+<figure>
+    <img src="/posts/private-ep.png"/> <figcaption>
+            <h4>Interface Endpoints</h4>
+        </figcaption>
+</figure>
+
+<p><strong>Create Cluster with Private API-Server Endpoint</strong></p>
+<p>Use aws cli to create EKS cluster in the designated VPC. Modify with the actual cluster name, kubernetes version, pod execution role arn, private subnet names and security group name before you run the command. Please notice that this might take 10-15 minutes to get the cluster in Ready state.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws eks create-cluster --name &lt;private-fargate-cluster&gt; --kubernetes-version 1.18 --role-arn arn:aws:iam::1234567890:role/private-fargate-pod-execution-role
+--resources-vpc-config subnetIds=&lt;subnet-01b3ae56696b33747,subnet-0e639397d1f12500a,subnet-039f4170f8a820afc&gt;,securityGroupIds=&lt;sg-0c867ffb5ec31bb6b&gt;,endpointPublicAccess=false,endpointPrivateAccess=true
+--logging <span style="">&#39;</span>{<span style="color:#a31515">&#34;clusterLogging&#34;</span>:[{<span style="color:#a31515">&#34;types&#34;</span>:[<span style="color:#a31515">&#34;api&#34;</span>,<span style="color:#a31515">&#34;audit&#34;</span>,<span style="color:#a31515">&#34;authenticator&#34;</span>,<span style="color:#a31515">&#34;controllerManager&#34;</span>,<span style="color:#a31515">&#34;scheduler&#34;</span>],<span style="color:#a31515">&#34;enabled&#34;</span>:true}]}
+</code></pre></div><p>Above command creates a  private EKS cluster with private endpoints and enables logging for Kubernetes control plane components such as for apiserver, scheduler etc. Tweak as per your compliance needs.</p>
+<p>Connection to this private cluster could be achieved in 3 ways, via bastion host, Cloud9 or  connected network as listed here at : <a href="https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html#private-access">https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html#private-access</a> . For the ease of doing it, we will go ahead with EC2 Bastion host approach.</p>
+<p>While you are waiting for the cluster to be in ready state, let&rsquo;s set up the Bastion host. This is needed because the EKS on Fargate cluster is in private subnets only, without internet connectivity and the API server access is set to private only. Bastion host will be created in public subnet in the same VPC and will be used to access/reach EKS on Fargate cluster. Only requisite is to install kubectl and aws cli on it. <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/">Kubectl can be downloaded from here</a> and <a href="https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html">aws cli v2 could be downloaded from here</a></p>
+<blockquote>
+<p>All subsequent commands could be run from Bastion host.</p>
+</blockquote>
+<p><strong>Setup access to EKS on Fargate Cluster</strong></p>
+<p>kubectl on bastion host needs to talk to api-server in order to communicate to EKS on Fargate cluster. Perform the following steps in order to setup this communication. Make sure to have aws cli configuration done prior to running this command.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws eks --region &lt;region-code&gt; update-kubeconfig --name &lt;cluster_name&gt;
+</code></pre></div><p>This saves the kubeconfig file to ~/.kube/config path which enables running kubectl commands to EKS cluster.</p>
+<p><strong>Enable logging(optional)</strong></p>
+<p>Logging could be very useful to debug the issues while rolling out the application. Setup the logging in the EKS Fargate cluster via :  <a href="https://docs.aws.amazon.com/eks/latest/userguide/fargate-logging.html">https://docs.aws.amazon.com/eks/latest/userguide/fargate-logging.html</a></p>
+<p><strong>Create Fargate Profile</strong></p>
+<p>In order to schedule pods running on Fargate in your cluster, you must define a Fargate profile that specifies which pods should use Fargate when they are launched. Fargate profiles are immutable by nature. A profile is essentially combination of namespace and optionally labels. Pods that match a selector (by matching a namespace for the selector and all of the labels specified in the selector) are scheduled on Fargate.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws eks create-fargate-profile --fargate-profile-name fargate-custom-profile <span style="color:#a31515">\
+</span><span style="color:#a31515"></span>--cluster-name private-fargate-cluster --pod-execution-role-arn <span style="color:#a31515">\
+</span><span style="color:#a31515"></span>arn:aws:iam::01234567890:role/private-fargate-pod-execution-role <span style="color:#a31515">\
+</span><span style="color:#a31515"></span>--subnets subnet-01b3ae56696b33747 subnet-0e639397d1f12500a <span style="color:#a31515">\
+</span><span style="color:#a31515"></span>subnet-039f4170f8a820afc --selectors namespace=custom-space
+</code></pre></div><p>This command creates a Fargate profile in the cluster and tells EKS to schedule pods in namespace &lsquo;custom-space&rsquo; to Fargate. However, we need to make few changes to our cluster, before we are able to run applications on it.</p>
+<figure>
+    <img src="/posts/fargate.png"/> <figcaption>
+            <h4>Private EKS on Fargate Cluster</h4>
+        </figcaption>
+</figure>
+
+<p><strong>Update CoreDNS</strong></p>
+<p>CoreDNS is configured to run on Amazon EC2 infrastructure on Amazon EKS clusters. Since in our cluster we do not have EC2 nodes, we need to update the CoreDNS deployment to remove the <a href="http://eks.amazonaws.com/compute-type">eks.amazonaws.com/compute-type</a> : ec2 annotation. And create a Fargate profile so that CoreDNS pods can use it to run. Update the following Fargate profile JSON for your own cluster name, account name, role arn  and save in a local file.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">{
+    &#34;fargateProfileName&#34;: <span style="color:#a31515">&#34;coredns&#34;</span>,
+    &#34;clusterName&#34;: <span style="color:#a31515">&#34;private-fargate-cluster&#34;</span>,
+    &#34;podExecutionRoleArn&#34;: <span style="color:#a31515">&#34;arn:aws:iam::1234567890:role/private-fargate-pod-execution-role&#34;</span>,
+    &#34;subnets&#34;: [
+        <span style="color:#a31515">&#34;subnet-01b3ae56696b33747&#34;</span>,
+        <span style="color:#a31515">&#34;subnet-0e639397d1f12500a&#34;</span>,
+        <span style="color:#a31515">&#34;subnet-039f4170f8a820afc&#34;</span>
+    ],
+    &#34;selectors&#34;: [
+        {
+            &#34;namespace&#34;: <span style="color:#a31515">&#34;kube-system&#34;</span>,
+            &#34;labels&#34;: {
+                &#34;k8s-app&#34;: <span style="color:#a31515">&#34;kube-dns&#34;</span>
+            }
+        }
+    ]
+}
+</code></pre></div><p>Apply this JSON with the following command</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws eks create-fargate-profile --cli-input-json file://updated-coredns.json
+</code></pre></div><p>Next step is to remove the annotation from CoreDNS pods, allowing them to be scheduled on Fargate infrastructure:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl patch deployment coredns -n kube-system --type json <span style="color:#a31515">\
+</span><span style="color:#a31515"></span>-p=<span style="color:#a31515">&#39;[{&#34;op&#34;: &#34;remove&#34;, &#34;path&#34;: &#34;/spec/template/metadata/annotations/eks.amazonaws.com~1compute-type&#34;}]&#39;</span>
+</code></pre></div><p>Final step to make coreDNS function properly is to recreate these pods, we will use rollout deployment for this:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl rollout restart -n kube-system deployment.apps/coredns
+</code></pre></div><p>Make sure to double check after a while that coreDNS pods are in running state in kube-system namespace before proceeding further.</p>
+<p>After these steps EKS on Fargate private cluster is up and running. Because this cluster does not have internet connectivity, pods scheduled on this can not pull container images from public registry like dockerhub etc. Solution to this is to setup ECR repo, host private images in it and refer to these images in pod manifests.</p>
+<p><strong>Setup ECR registry</strong></p>
+<p>This involves creating ECR repository, pulling image locally, tagging it appropriately and pushing to ECR registry. A container image could be copied to ECR from bastion host and can be accessed by EKS on Fargate via ECR VPC endpoint.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws ecr create-repository --repository-name nginx
+docker pull nginx:latest
+docker tag nginx &lt;1234567890&gt;.dkr.ecr.&lt;region-code&gt;.amazonaws.com/nginx:v1
+aws ecr get-login-password --region &lt;region-code&gt; | docker login --username AWS --password-stdin &lt;1234567890&gt;.dkr.ecr.&lt;region-code&gt;.amazonaws.com
+docker push &lt;1234567890&gt;.dkr.ecr.&lt;region-code&gt;.amazonaws.com/nginx:v1
+</code></pre></div><p><strong>Run Application in EKS on Fargate Cluster</strong></p>
+<p>Now that we have pushed nginx image to ECR, we can reference it to the deployment yaml.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-app
+  namespace: custom-space
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: &lt;124567890&gt;.dkr.ecr.&lt;region-code&gt;.amazonaws.com/nginx:v1
+          ports:
+            - containerPort: 80
+</code></pre></div><p>Cross-check to ensure that nginx application is in running state after a while.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">kubectl get pods -n custom-space
+NAME                          READY   STATUS      RESTARTS   AGE
+sample-app-578d67447d-fw6kp   1/1     Running     0          8m52s
+sample-app-578d67447d-r68v2   1/1     Running     0          8m52s
+sample-app-578d67447d-vbbfr   1/1     Running     0          8m52s
+</code></pre></div><p>Describe the deployment should look like this.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">kubectl describe deployment -n custom-space
+Name:                   sample-app
+Namespace:              custom-space
+CreationTimestamp:      Tue, 19 Dec 2020 23:43:04 +0000
+Labels:                 &lt;none&gt;
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=nginx
+Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=nginx
+  Containers:
+   nginx:
+    Image:        1234567890.dkr.ecr.&lt;region-code&gt;.amazonaws.com/nginx:v1
+    Port:         80/TCP
+    Host Port:    0/TCP
+    Environment:  &lt;none&gt;
+    Mounts:       &lt;none&gt;
+  Volumes:        &lt;none&gt;
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  &lt;none&gt;
+NewReplicaSet:   sample-app-578d67447d (3/3 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  10m   deployment-controller  Scaled up replica set sample-app-578d67447d to 3
+</code></pre></div><p>Ensuring that nginx application is actually running on Fargate infrastructure, check the EC2 console page. You would not find any EC2 running there as part of EKS cluster, as the underlying infrastructure is fully managed by AWS.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get nodes
+NAME                                    STATUS   ROLES   AGE   VERSION
+fargate-ip-10-172-36-16.ec2.internal    Ready    &lt;none&gt;  12m v1.18.8-eks-7c9bda
+fargate-ip-10-172-10-28.ec2.internal    Ready    &lt;none&gt;  12m v1.18.8-eks-7c9bda
+fargate-ip-10-172-62-216.ec2.internal   Ready    &lt;none&gt;  12m v1.18.8-eks-7c9bda
+</code></pre></div><p>Another experiment to try out is to create a new deployment with image which is not part of ECR and see that pod will be in crashbackoff state because being a private cluster it can not reach dockerhub on public internet to pull the image.</p>
+<h3 id="closing">Closing</h3>
+<ul>
+<li>In this experimentation - we created a private EKS on Fargate Cluster, with private API endpoints.</li>
+<li>This deployment solves some of the compliance challenges faced by BFSI and other regulated sectors.</li>
+</ul>
+<p>Please let know if you face challenges replicating this in your own environment. PRs to improve this documentation is welcome. Happy Learning!</p>
+
+			</div>
+
+			<div class="tags">
+				
+					
+						<ul class="flat">
+							
+							<li><a href="/tags/eks">EKS</a></li>
+							
+							<li><a href="/tags/fargate">Fargate</a></li>
+							
+							<li><a href="/tags/kubernetes">kubernetes</a></li>
+							
+							<li><a href="/tags/vpc">VPC</a></li>
+							
+						</ul>
+					
+				
+			</div><div id="disqus_thread"></div>
+<script type="text/javascript">
+	(function () {
+		
+		
+		if (window.location.hostname == "localhost")
+			return;
+
+		var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+		var disqus_shortname = 'k8s-dev';
+		dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+		(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	})();
+</script>
+<noscript>Please enable JavaScript to view the </a></noscript>
+<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+	</div>
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div>2020  ©Jayesh Kumar Tank. Contact me before publishing this content |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
+</div>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-123-45', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script>feather.replace()</script>
+</body>
+</html>

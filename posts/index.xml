@@ -2,40 +2,45 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on k8s-dev</title>
-    <link>/posts/</link>
+    <link>https://k8s-dev.github.io/posts/</link>
     <description>Recent content in Posts on k8s-dev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>©Jayesh Kumar Tank. Contact me before publishing this content</copyright>
-    <lastBuildDate>Sat, 17 Oct 2020 07:12:05 +0530</lastBuildDate>
-    
-	<atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
-    
+    <lastBuildDate>Sat, 05 Dec 2020 07:21:05 +0530</lastBuildDate><atom:link href="https://k8s-dev.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Setup a fully Private Amazon EKS  on AWS Fargate Cluster</title>
+      <link>https://k8s-dev.github.io/posts/eksfargate/</link>
+      <pubDate>Sat, 05 Dec 2020 07:21:05 +0530</pubDate>
+      
+      <guid>https://k8s-dev.github.io/posts/eksfargate/</guid>
+      <description>Regulated industries needs to host their Kubernetes workloads in most secure ways and fully private EKS on Fargate cluster attempts to solve this problem. Each pod running on Fargate has its own isolation boundary and does not share the underlying kernel, CPU resources, memory resources, or elastic network interface with another pod, which makes it secure from compliance point of view.</description>
+    </item>
     
     <item>
       <title>A quarter has gone by at Amazon</title>
-      <link>/posts/cert/</link>
+      <link>https://k8s-dev.github.io/posts/cert/</link>
       <pubDate>Sat, 17 Oct 2020 07:12:05 +0530</pubDate>
       
-      <guid>/posts/cert/</guid>
+      <guid>https://k8s-dev.github.io/posts/cert/</guid>
       <description>Time flies. And in this short time - I completed my first quarter at AWS, and it is still #Day1. Needless to say - it has been a roller-coaster ride. I am part of Professional Services team here, and we provide assistance to our customers through a collection of offerings which helps achieve specific outcomes related to enterprise cloud adoption.</description>
     </item>
     
     <item>
       <title>How did I land a Cloud Architect Role at Amazon</title>
-      <link>/posts/aws/</link>
+      <link>https://k8s-dev.github.io/posts/aws/</link>
       <pubDate>Mon, 06 Jul 2020 07:17:43 +0530</pubDate>
       
-      <guid>/posts/aws/</guid>
+      <guid>https://k8s-dev.github.io/posts/aws/</guid>
       <description>This guide is for experienced professionals who are looking to build their career into Cloud domain and may be concerned that landing a job at Amazon is beyond reasonable. Someone had told me as well that the job market is uncertain and I should stick to my previous position.</description>
     </item>
     
     <item>
       <title>Background</title>
-      <link>/posts/background/</link>
+      <link>https://k8s-dev.github.io/posts/background/</link>
       <pubDate>Thu, 18 Jun 2020 07:17:27 +0530</pubDate>
       
-      <guid>/posts/background/</guid>
+      <guid>https://k8s-dev.github.io/posts/background/</guid>
       <description>Fun-fact: I had tendered my resignation without a job at hand. Part of it was foolishness (I am young at heart) and part of it was confidence that &amp;lsquo;all I want is a single job&amp;rsquo; and with the skills I have, the certifications that I have earned (to prove my skill-sets) - it will be just fine and for sure I will land a job, after all Bengaluru is India’s silicon valley.</description>
     </item>
     

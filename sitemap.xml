@@ -3,72 +3,87 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>/posts/cert/</loc>
+    <loc>https://k8s-dev.github.io/tags/eks/</loc>
+    <lastmod>2020-12-05T07:21:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/tags/fargate/</loc>
+    <lastmod>2020-12-05T07:21:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/</loc>
+    <lastmod>2020-12-05T07:21:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/tags/kubernetes/</loc>
+    <lastmod>2020-12-05T07:21:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/posts/</loc>
+    <lastmod>2020-12-05T07:21:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/posts/eksfargate/</loc>
+    <lastmod>2020-12-05T07:21:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/tags/</loc>
+    <lastmod>2020-12-05T07:21:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/tags/vpc/</loc>
+    <lastmod>2020-12-05T07:21:05+05:30</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://k8s-dev.github.io/posts/cert/</loc>
     <lastmod>2020-10-17T07:12:05+05:30</lastmod>
   </url>
   
   <url>
-    <loc>/tags/amazon/</loc>
+    <loc>https://k8s-dev.github.io/tags/amazon/</loc>
     <lastmod>2020-10-17T07:12:05+05:30</lastmod>
   </url>
   
   <url>
-    <loc>/tags/aws/</loc>
+    <loc>https://k8s-dev.github.io/tags/certificate/</loc>
     <lastmod>2020-10-17T07:12:05+05:30</lastmod>
   </url>
   
   <url>
-    <loc>/tags/certificate/</loc>
-    <lastmod>2020-10-17T07:12:05+05:30</lastmod>
-  </url>
-  
-  <url>
-    <loc>/posts/</loc>
-    <lastmod>2020-10-17T07:12:05+05:30</lastmod>
-  </url>
-  
-  <url>
-    <loc>/tags/</loc>
-    <lastmod>2020-10-17T07:12:05+05:30</lastmod>
-  </url>
-  
-  <url>
-    <loc>/about/</loc>
+    <loc>https://k8s-dev.github.io/about/</loc>
     <lastmod>2020-07-08T07:17:11+05:30</lastmod>
   </url>
   
   <url>
-    <loc>/</loc>
-    <lastmod>2020-07-08T07:17:11+05:30</lastmod>
-  </url>
-  
-  <url>
-    <loc>/posts/aws/</loc>
+    <loc>https://k8s-dev.github.io/posts/aws/</loc>
     <lastmod>2020-07-06T07:17:43+05:30</lastmod>
   </url>
   
   <url>
-    <loc>/tags/interview/</loc>
+    <loc>https://k8s-dev.github.io/tags/interview/</loc>
     <lastmod>2020-07-06T07:17:43+05:30</lastmod>
   </url>
   
   <url>
-    <loc>/tags/loop/</loc>
+    <loc>https://k8s-dev.github.io/tags/loop/</loc>
     <lastmod>2020-07-06T07:17:43+05:30</lastmod>
   </url>
   
   <url>
-    <loc>/posts/background/</loc>
+    <loc>https://k8s-dev.github.io/posts/background/</loc>
     <lastmod>2020-06-18T07:17:27+05:30</lastmod>
   </url>
   
   <url>
-    <loc>/tags/background/</loc>
-    <lastmod>2020-06-18T07:17:27+05:30</lastmod>
-  </url>
-  
-  <url>
-    <loc>/tags/whoami/</loc>
+    <loc>https://k8s-dev.github.io/tags/whoami/</loc>
     <lastmod>2020-06-18T07:17:27+05:30</lastmod>
   </url>
   

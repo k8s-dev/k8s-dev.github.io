@@ -7,11 +7,11 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>©Jayesh Kumar Tank. Contact me before publishing this content</copyright>
-    <lastBuildDate>Sat, 05 Dec 2020 07:21:05 +0530</lastBuildDate><atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 30 Dec 2020 07:21:05 +0530</lastBuildDate><atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Setup a fully Private Amazon EKS  on AWS Fargate Cluster</title>
       <link>/posts/eksfargate/</link>
-      <pubDate>Sat, 05 Dec 2020 07:21:05 +0530</pubDate>
+      <pubDate>Wed, 30 Dec 2020 07:21:05 +0530</pubDate>
       
       <guid>/posts/eksfargate/</guid>
       <description>Regulated industries needs to host their Kubernetes workloads in most secure ways and fully private EKS on Fargate cluster attempts to solve this problem. Each pod running on Fargate has its own isolation boundary and does not share the underlying kernel, CPU resources, memory resources, or elastic network interface with another pod, which makes it secure from compliance point of view.</description>

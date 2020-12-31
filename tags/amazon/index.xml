@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>amazon on k8s-dev</title>
-    <link>https://k8s-dev.github.io/tags/amazon/</link>
+    <link>/tags/amazon/</link>
     <description>Recent content in amazon on k8s-dev</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>©Jayesh Kumar Tank. Contact me before publishing this content</copyright>
-    <lastBuildDate>Sat, 17 Oct 2020 07:12:05 +0530</lastBuildDate><atom:link href="https://k8s-dev.github.io/tags/amazon/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 17 Oct 2020 07:12:05 +0530</lastBuildDate><atom:link href="/tags/amazon/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>A quarter has gone by at Amazon</title>
-      <link>https://k8s-dev.github.io/posts/cert/</link>
+      <link>/posts/cert/</link>
       <pubDate>Sat, 17 Oct 2020 07:12:05 +0530</pubDate>
       
-      <guid>https://k8s-dev.github.io/posts/cert/</guid>
+      <guid>/posts/cert/</guid>
       <description>Time flies. And in this short time - I completed my first quarter at AWS, and it is still #Day1. Needless to say - it has been a roller-coaster ride. I am part of Professional Services team here, and we provide assistance to our customers through a collection of offerings which helps achieve specific outcomes related to enterprise cloud adoption.</description>
     </item>
     

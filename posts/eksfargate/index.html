@@ -2,24 +2,24 @@
 <html>
 <head>
 	<meta charset="utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Setup a fully Private Amazon EKS  on AWS Fargate Cluster - k8s-dev</title><meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta itemprop="name" content="Setup a fully Private Amazon EKS  on AWS Fargate Cluster">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Setup a Fully Private Amazon EKS  on AWS Fargate Cluster - k8s-dev</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="Setup a Fully Private Amazon EKS  on AWS Fargate Cluster">
 <meta itemprop="description" content="...and this marks the begining of my tech publication journey!!">
 <meta itemprop="datePublished" content="2020-12-30T07:21:05+05:30" />
 <meta itemprop="dateModified" content="2020-12-30T07:21:05+05:30" />
-<meta itemprop="wordCount" content="1628">
+<meta itemprop="wordCount" content="1719">
 
 
 
 <meta itemprop="keywords" content="EKS,Fargate,kubernetes,VPC," />
-<meta property="og:title" content="Setup a fully Private Amazon EKS  on AWS Fargate Cluster" />
+<meta property="og:title" content="Setup a Fully Private Amazon EKS  on AWS Fargate Cluster" />
 <meta property="og:description" content="...and this marks the begining of my tech publication journey!!" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/posts/eksfargate/" />
 <meta property="article:published_time" content="2020-12-30T07:21:05+05:30" />
 <meta property="article:modified_time" content="2020-12-30T07:21:05+05:30" />
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Setup a fully Private Amazon EKS  on AWS Fargate Cluster"/>
+<meta name="twitter:title" content="Setup a Fully Private Amazon EKS  on AWS Fargate Cluster"/>
 <meta name="twitter:description" content="...and this marks the begining of my tech publication journey!!"/>
 <link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
 	<link rel="stylesheet" type="text/css" media="screen" href="/css/normalize.css" />
@@ -76,12 +76,12 @@ Opinions mentioned here are personal and not of my employer.</p><nav class="nav 
 					</div>
 				
 				<div class="matter">
-					<h1 class="title">Setup a fully Private Amazon EKS  on AWS Fargate Cluster</h1>
+					<h1 class="title">Setup a Fully Private Amazon EKS  on AWS Fargate Cluster</h1>
 				</div>
 			</div>
 					
 			<div class="markdown">
-				<p>Regulated industries needs to host their Kubernetes workloads in most secure ways and fully private EKS on Fargate cluster attempts to solve this problem. Each pod running on Fargate has its own isolation boundary and does not share the underlying kernel, CPU resources, memory resources, or elastic network interface with another pod, which makes it secure from compliance point of view. With AWS Fargate, you no longer have to provision, configure, or scale groups of virtual machines to run containers. This removes the need to choose server types, decide when to scale your node groups, or optimise cluster packing.</p>
+				<p>Regulated industries needs to host their workloads in most secure ways and fully private EKS on Fargate cluster attempts to solve this problem. Kubernetes is an open-source system for automating the deployment, scaling, and management of containerized applications. AWS Fargate is a technology that provides on-demand, right-sized compute capacity for containers. Each pod running on Fargate has its own isolation boundary and does not share the underlying kernel, CPU resources, memory resources, or elastic network interface with another pod, which makes it secure from compliance point of view. With AWS Fargate, you no longer have to provision, configure, or scale groups of virtual machines to run containers. This removes the need to choose server types, decide when to scale your node groups, or optimise cluster packing.</p>
 <p>Source code for this post is hosted at : <a href="https://github.com/k8s-dev/private-eks-fargate">https://github.com/k8s-dev/private-eks-fargate</a></p>
 <h3 id="constraints">Constraints</h3>
 <ul>
@@ -113,6 +113,14 @@ Opinions mentioned here are personal and not of my employer.</p><nav class="nav 
 <p>This step is <strong>essential</strong> to perform so that pods running on Fargate cluster can pull container images, push logs to CloudWatch and interact with loadbalancer.</p>
 <p>See the entire list here of endpoints that your cluster may use: <a href="https://docs.aws.amazon.com/eks/latest/userguide/private-clusters.html#vpc-endpoints-private-clusters">https://docs.aws.amazon.com/eks/latest/userguide/private-clusters.html#vpc-endpoints-private-clusters</a></p>
 <p>Setup the VPC endpoint and Gateway endpoints in the same VPC for the services that you plan to use in your EKS on Fargate cluster by following steps at :  <a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpce-interface.html#create-interface-endpoint">https://docs.aws.amazon.com/vpc/latest/userguide/vpce-interface.html#create-interface-endpoint</a></p>
+<p>We need to provision the following endpoints at the minimum:</p>
+<ul>
+<li>Interface endpoints for ECR (both ecr.api and ecr.dkr) to pull container images</li>
+<li>A gateway endpoint for S3 to pull the actual image layers</li>
+<li>An interface endpoint for EC2</li>
+<li>An interface endpoint for STS to support Fargate and IAM Roles for Services Accounts</li>
+<li>An interface endpoint for CloudWatch logging (logs) if CloudWatch logging is required</li>
+</ul>
 <figure>
     <img src="/posts/private-ep.png"/> <figcaption>
             <h4>Interface Endpoints</h4>
@@ -299,7 +307,7 @@ fargate-ip-10-172-62-216.ec2.internal   Ready    &lt;none&gt;  12m v1.18.8-eks-7
 	</div>
 	<div class="footer wrapper">
 	<nav class="nav">
-		<div>2020  ©Jayesh Kumar Tank. Contact me before publishing this content |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
+		<div>2021  ©Jayesh Kumar Tank. Contact me before publishing this content |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
 	</nav>
 </div>
 

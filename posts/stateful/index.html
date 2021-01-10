@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Deploying StatefulSets on Private AWS Fargate Cluster - k8s-dev</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="Deploying StatefulSets on Private AWS Fargate Cluster">
+<meta itemprop="description" content="...while maintaining private access to the workloads!!">
+<meta itemprop="datePublished" content="2021-01-10T07:18:45+05:30" />
+<meta itemprop="dateModified" content="2021-01-10T07:18:45+05:30" />
+<meta itemprop="wordCount" content="1457">
+
+
+
+<meta itemprop="keywords" content="EKS,Fargate,kubernetes,StatefulSet," />
+<meta property="og:title" content="Deploying StatefulSets on Private AWS Fargate Cluster" />
+<meta property="og:description" content="...while maintaining private access to the workloads!!" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/posts/stateful/" />
+<meta property="article:published_time" content="2021-01-10T07:18:45+05:30" />
+<meta property="article:modified_time" content="2021-01-10T07:18:45+05:30" />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Deploying StatefulSets on Private AWS Fargate Cluster"/>
+<meta name="twitter:description" content="...while maintaining private access to the workloads!!"/>
+<link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" media="screen" href="/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
+
+        <link id="dark-scheme" rel="stylesheet" type="text/css" href="/css/dark.css" />
+
+	<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+		<script src="/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper">
+		<div class="header">
+	
+	<h1 class="site-title"><a href="/">k8s-dev</a></h1>
+	<div class="site-description"><p>Personal Blog of <a href="https://www.linkedin.com/in/jayeshtank">Jayesh Kumar Tank</a>.
+Opinions mentioned here are personal and not of my employer.</p><nav class="nav social">
+			<ul class="flat"><li><a href="https://github.com/k8s-dev" title="Github"><i data-feather="github"></i></a></li><li><a href="https://www.linkedin.com/in/jayeshtank" title="LinkedIn"><i data-feather="linkedin"></i></a></li><li><a href="https://twitter.com/jtankx" title="Twitter"><i data-feather="twitter"></i></a></li></ul>
+		</nav><span class="scheme-toggle"><a href="#" id="scheme-toggle"></a></div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/">Home</a>
+			</li>
+			
+			<li>
+				<a href="/posts">All posts</a>
+			</li>
+			
+			<li>
+				<a href="/about">About</a>
+			</li>
+			
+			<li>
+				<a href="/tags">Tags</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
+
+
+		<div class="post">
+			<div class="post-header">
+				
+					<div class="meta">
+						<div class="date">
+							<span class="day">10</span>
+							<span class="rest">Jan 2021</span>
+						</div>
+					</div>
+				
+				<div class="matter">
+					<h1 class="title">Deploying StatefulSets on Private AWS Fargate Cluster</h1>
+				</div>
+			</div>
+					
+			<div class="markdown">
+				<p><em>Because Kubernetes has transformed the way organisations do application deployments and databases are integral part of the applications and can&rsquo;t be left behind&hellip;</em></p>
+<p>In a previous <a href="https://k8s-dev.github.io/posts/eksfargate">article</a>, we discussed the setup for Fully Private EKS on Fargate Cluster fulfilling security requirements of certain regulated industries. This post is a follow up where we will further add the persistent storage and host StatefulSets on this Fully Private Fargate Cluster, while adhering to compliance requirements.</p>
+<h2 id="short-intro-to-statefulset">Short Intro to StatefulSet</h2>
+<p>Statefulset is a Kubernetes contruct which helps in managing stateful applications, while maintaining the guarantees around the sequence of deployment and uniqueness of the underlying pods created by it. Statefulset and its sticky identity is particularly useful while hosting databases on kubernetes, such as MySQL with read-replicas.</p>
+<p>Statefulset is very similar to Deployment, but the main differentiation arises from the fact that Statefulset maintain sticky identity to pods, they are created in order and have persistence across rescheduling cycles. Some features of StatefulSets are:</p>
+<ul>
+<li>Stable(persistent across pod re-scheduling), unique network identifiers</li>
+<li>Stable(persistent across pod re-scheduling), persistent storage</li>
+<li>Ordered, graceful deployment and scaling</li>
+<li>Ordered, automated rolling updates</li>
+</ul>
+<p>Elastic File System (EFS) is a scalable and fully managed shared file-system implementation on AWS, which has integration with EKS Fargate for providing persistent storage. EFS is highly elastic and scalable, it automatically grows and shrinks on demand, while encrypting data at rest and in transit. In this solution we will make use of EFS VPC Endpoint which is ideal for security sensitive workloads running on AWS Fargate.</p>
+<h2 id="pre-requisite">Pre-Requisite</h2>
+<ul>
+<li>A Fully Private EKS on Fargate Cluster setup (following the <a href="https://k8s-dev.github.io/posts/eksfargate">article</a>)</li>
+</ul>
+<h2 id="design">Design</h2>
+<p>Kubernetes supports persistent storage via “Container Storage Interface (CSI)” standard. Application pods running on Fargate uses EFS CSI driver to access EFS file system using standard Kubernetes APIs. EFS support at rest data encryption and while using the EFS CSI driver, all data in transit is encrypted by default which is a <strong>compliance requirement</strong> in most regulated industries.</p>
+<p>Whenever a pod running on Fargate is terminated and relaunched, the CSI driver reconnects the EFS file system, even when pod is relaunched in a different AWS Availability Zone, this makes EFS as an appealing solution to provide persistent storage. EFS CSI driver comes pre-installed with Fargate stack and support for EFS is provided out of the box, updates are managed by AWS transparently.</p>
+<p>The EFS integration with EKS on Fargate leverages three Kubernetes constructs - StorageClass, Persistent Volume (PV) and Persistent Volume Claim (PVC). This allows segragation of duties while operating the cluster where storage admin (or cluster admin) would configure Storage Class, EFS and would create PVs out of this. The developer team would then utilise these available PVs to create PVCs as and when required to deploy applications.</p>
+<blockquote>
+<p>While Kubernetes Storage Class allows volume creation dynamically and statically - in this experiment we will use EFS CSI driver to statically create volume which is the only supported implementation yet with EFS CSI driver.</p>
+</blockquote>
+<h2 id="implementation-steps">Implementation Steps</h2>
+<p>Before proceeding - ensure to have a EKS on Fargate cluster up and running.</p>
+<h3 id="create-vpc-endpoint-for-efs"><strong>Create VPC Endpoint for EFS</strong></h3>
+<p>The EFS VPC endpoint provides secure connectivity to the Amazon EFS API without requiring an internet gateway, NAT instance, or virtual private network (VPN) connection. Follow the guide at : <a href="https://docs.aws.amazon.com/efs/latest/ug/efs-vpc-endpoints.html">https://docs.aws.amazon.com/efs/latest/ug/efs-vpc-endpoints.html</a> to setup a VPC Endpoint for EFS in the same region where EKS on Fargate Cluster resides.</p>
+<h3 id="create-elastic-file-system"><strong>Create Elastic File System</strong></h3>
+<p>First, we need to create EFS file system in the same AWS Region where EKS on Fargate Cluster is residing. Follow <a href="https://docs.aws.amazon.com/efs/latest/ug/getting-started.html">EFS getting start guide</a>, and configure EFS in the same private subnets which are used while creating EKS on Fargate Cluster. Also make sure to add EKS on Fargate security group in EFS configuration. We shall have EFS encryption enabled for this experimentation.</p>
+<p>Finally, note down the FileSystem ID after successful creation which would be needed further down when we will create a persistent storage from it.</p>
+<h3 id="create-fargate-profile-for-statefulsets"><strong>Create Fargate Profile for StatefulSets</strong></h3>
+<p>Fargate allows hands free management for Kubernetes Clusters. To direct EKS to schedule pods on Fargate - we need to create a Fargate profile which is a combination of namespace and labels. In this experiments we are creating a profile with namespace &lsquo;efs-statefulset&rsquo; and all of the objects including pods, service, persistent volume and persistent volume claim will get created in this namespace.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws eks create-fargate-profile --fargate-profile-name fargate-statefulset --region us-east-1 --cluster-name private-fargate-cluster --pod-execution-role-arn arn:aws:iam::1234567890:role/private-fargate-pod-execution-role --subnets subnet-01b3ae56696b33747 subnet-0e639397d1f12500a subnet-039f4170f8a820afc --selectors namespace=efs-statefulset
+</code></pre></div><h3 id="storageclass-pv-and-pvc"><strong>StorageClass, PV and PVC</strong></h3>
+<p>StorageClass in equivalent of a storage profile in Kubernetes which provides a way for admins to specify type of storage, quality-of-service, backup policy or any other arbitrary policy.</p>
+<p>Persistent Volume is a Kubernetes resource which allows to store data in persistent way across life-cycle of a pod. PV could be created dynamically or statically using StorageClass. PVC is a request for storage by a Pod. By using PVC object - Kubernetes abstracts away the implementation details of PV.</p>
+<p>Let&rsquo;s make use of the following .yaml to rollout StorageClass, PV and PVC along with a sample application based on amazon-linux:2 image. All it does is to keep redirecting date and time into a file hosted on persistent volume in EFS.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: efs-pv
+  namespace: efs-statefulset
+spec:
+  capacity:
+    storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: efs-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: &lt;EFS filesystem ID&gt;
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-claim
+  namespace: efs-statefulset
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: efs-app-sts
+  namespace: efs-statefulset
+spec:
+  selector:
+    matchLabels:
+      app: test-efs
+  serviceName: efs-app
+  replicas: 3
+  template:
+    metadata:
+      namespace: efs-statefulset
+      labels:
+        app: test-efs
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: linux
+        image: 445835230214.dkr.ecr.us-east-1.amazonaws.com/amazon-linux2
+        command: [<span style="color:#a31515">&#34;/bin/sh&#34;</span>]
+        args: [<span style="color:#a31515">&#34;-c&#34;</span>, <span style="color:#a31515">&#34;while true; do echo $(date -u) &gt;&gt; /efs-data/out.txt; sleep 5; done&#34;</span>]
+        volumeMounts:
+        - name: efs-storage
+          mountPath: /efs-data
+      volumes:
+      - name: efs-storage
+        persistentVolumeClaim:
+          claimName: efs-claim
+</code></pre></div><p>Deploy the yaml using the command:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">
+kubectl apply -f &lt;file.yaml&gt;
+</code></pre></div><p>Once deployed, we can see the status of PV and PVC by using the following command:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">
+$ kubectl get pv -n efs-statefulset
+
+NAME     CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                         STORAGECLASS   REASON   AGE
+efs-pv   5Gi        RWX            Retain           Bound    efs-statefulset/efs-claim   efs-sc                  17s
+
+$ kubectl get pvc -n efs-statefulset
+
+NAME        STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+efs-claim   Bound    efs-pv   5Gi        RWX            efs-sc         48s
+</code></pre></div><p>This shows that PV is allocated and PVC is in bound state. Also the statefulsets are rolled out and are in running state.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">
+$ kubectl get statefulsets -n efs-statefulset -o wide
+
+NAME          READY   AGE   CONTAINERS   IMAGES
+efs-app-sts   3/3     27m   linux        1234567890.dkr.ecr.us-east-1.amazonaws.com/amazon-linux2
+</code></pre></div><h3 id="experiments">Experiments</h3>
+<p>To appreciate the way statefulset maintains the sticky identity - we will perform a few experiments.</p>
+<p><strong>Scale exercise:</strong> Let&rsquo;s down scale the current statefulset to 2, this would delete a running statefulset and we will see that the efs-app-sts-2 would get terminated first as it was the last one to get deployed.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl scale sts efs-app-sts --replicas=2 -n efs-statefulset
+
+statefulset.apps/efs-app-sts scaled
+
+$ kubectl get pods -n efs-statefulset -w
+
+NAME            READY   STATUS    RESTARTS       AGE
+efs-app-sts-0   1/1     Running       0          29m
+efs-app-sts-1   1/1     Running       0          28m
+efs-app-sts-2   0/1     Terminating   0          5s
+</code></pre></div><p>To see the ordered pod termination let&rsquo;s do another experiment. In one terminal execute the pod delete command while in other terminal put a watch on statefulset. We can easily observe that pod go down in order, and wait to fully terminate one before starting to delete another one. And the same order gets repeated while re-creating the pods.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl delete pods --selector app=test-efs -n efs-statefulset
+
+pod <span style="color:#a31515">&#34;efs-app-sts-0&#34;</span> deleted
+pod <span style="color:#a31515">&#34;efs-app-sts-1&#34;</span> deleted
+</code></pre></div><p>In second terminal, execute the following command:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get pods -n efs-statefulset -w
+
+NAME            READY   STATUS             RESTARTS   AGE
+efs-app-sts-0   1/1     Running            0          33m
+efs-app-sts-1   1/1     Running            0          32m
+efs-app-sts-0   1/1     Terminating        0          34m
+efs-app-sts-1   1/1     Terminating        0          33m
+efs-app-sts-0   0/1     Terminating        0          34m
+efs-app-sts-1   0/1     Terminating        0          33m
+efs-app-sts-1   0/1     Terminating        0          33m
+efs-app-sts-1   0/1     Terminating        0          33m
+efs-app-sts-0   0/1     Terminating        0          34m
+efs-app-sts-0   0/1     Terminating        0          34m
+efs-app-sts-0   0/1     Pending            0          0s
+efs-app-sts-0   0/1     Pending            0          1s
+efs-app-sts-0   0/1     Pending            0          63s
+efs-app-sts-0   0/1     ContainerCreating  0          63s
+efs-app-sts-0   1/1     Running            0          73s
+efs-app-sts-1   0/1     Pending            0          1s
+efs-app-sts-1   0/1     Pending            0          2s
+efs-app-sts-1   0/1     Pending            0          57s
+efs-app-sts-1   0/1     ContainerCreating  0          57s
+efs-app-sts-1   1/1     Running            0          68s
+</code></pre></div><p>Et voilà! After deleting the statefulset, the replication controller triggered a new pod which used the same order to recreate and attach to EFS volume.</p>
+<p>For more information about StatefulSet, see the <a href="%5Bhttps://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set%5D(https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/)">Kubernetes Documentation</a></p>
+<hr>
+<h3 id="closing">Closing</h3>
+<ul>
+<li>In this article - we created a private EFS Endpoint and used it to host persistent data using StatefulSet in Kubernetes.</li>
+<li>This deployment solves some of the compliance challenges faced by BFSI and other regulated sectors, given the private deployment and encryption support.</li>
+</ul>
+<p>Please let know if you had challenges replicating this in your own environment. Happy Learning!</p>
+
+			</div>
+
+			<div class="tags">
+				
+					
+						<ul class="flat">
+							
+							<li><a href="/tags/eks">EKS</a></li>
+							
+							<li><a href="/tags/fargate">Fargate</a></li>
+							
+							<li><a href="/tags/kubernetes">kubernetes</a></li>
+							
+							<li><a href="/tags/statefulset">StatefulSet</a></li>
+							
+						</ul>
+					
+				
+			</div><div id="disqus_thread"></div>
+<script type="text/javascript">
+	(function () {
+		
+		
+		if (window.location.hostname == "localhost")
+			return;
+
+		var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+		var disqus_shortname = 'k8s-dev';
+		dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+		(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	})();
+</script>
+<noscript>Please enable JavaScript to view the </a></noscript>
+<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+	</div>
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div>2021  ©Jayesh Kumar Tank. Contact me before publishing this content |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
+</div>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-123-45', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script>feather.replace()</script>
+</body>
+</html>

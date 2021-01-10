@@ -2,25 +2,25 @@
 <html>
 <head>
 	<meta charset="utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Deploying StatefulSets on Private AWS Fargate Cluster - k8s-dev</title><meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta itemprop="name" content="Deploying StatefulSets on Private AWS Fargate Cluster">
-<meta itemprop="description" content="...while maintaining private access to the workloads!!">
-<meta itemprop="datePublished" content="2021-01-10T07:18:45+05:30" />
-<meta itemprop="dateModified" content="2021-01-10T07:18:45+05:30" />
-<meta itemprop="wordCount" content="1457">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS - k8s-dev</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS">
+<meta itemprop="description" content="...allowing data persistence, with low operational overhead!!">
+<meta itemprop="datePublished" content="2021-01-10T17:41:25+05:30" />
+<meta itemprop="dateModified" content="2021-01-10T17:41:25+05:30" />
+<meta itemprop="wordCount" content="1550">
 
 
 
-<meta itemprop="keywords" content="EKS,Fargate,kubernetes,StatefulSet," />
-<meta property="og:title" content="Deploying StatefulSets on Private AWS Fargate Cluster" />
-<meta property="og:description" content="...while maintaining private access to the workloads!!" />
+<meta itemprop="keywords" content="EKS,Fargate,kubernetes,VPC," />
+<meta property="og:title" content="Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS" />
+<meta property="og:description" content="...allowing data persistence, with low operational overhead!!" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/posts/stateful/" />
-<meta property="article:published_time" content="2021-01-10T07:18:45+05:30" />
-<meta property="article:modified_time" content="2021-01-10T07:18:45+05:30" />
+<meta property="article:published_time" content="2021-01-10T17:41:25+05:30" />
+<meta property="article:modified_time" content="2021-01-10T17:41:25+05:30" />
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Deploying StatefulSets on Private AWS Fargate Cluster"/>
-<meta name="twitter:description" content="...while maintaining private access to the workloads!!"/>
+<meta name="twitter:title" content="Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS"/>
+<meta name="twitter:description" content="...allowing data persistence, with low operational overhead!!"/>
 <link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
 	<link rel="stylesheet" type="text/css" media="screen" href="/css/normalize.css" />
 	<link rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
@@ -76,14 +76,15 @@ Opinions mentioned here are personal and not of my employer.</p><nav class="nav 
 					</div>
 				
 				<div class="matter">
-					<h1 class="title">Deploying StatefulSets on Private AWS Fargate Cluster</h1>
+					<h1 class="title">Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS</h1>
 				</div>
 			</div>
 					
 			<div class="markdown">
 				<p><em>Because Kubernetes has transformed the way organisations do application deployments and databases are integral part of the applications and can&rsquo;t be left behind&hellip;</em></p>
 <p>In a previous <a href="https://k8s-dev.github.io/posts/eksfargate">article</a>, we discussed the setup for Fully Private EKS on Fargate Cluster fulfilling security requirements of certain regulated industries. This post is a follow up where we will further add the persistent storage and host StatefulSets on this Fully Private Fargate Cluster, while adhering to compliance requirements.</p>
-<h2 id="short-intro-to-statefulset">Short Intro to StatefulSet</h2>
+<p>EFS support for EKS on Fargate is a recent feature, see the <a href="https://aws.amazon.com/blogs/aws/new-aws-fargate-for-amazon-eks-now-supports-amazon-efs">release blog post</a>.</p>
+<h2 id="short-intro-to-statefulset">Short intro to StatefulSet</h2>
 <p>Statefulset is a Kubernetes contruct which helps in managing stateful applications, while maintaining the guarantees around the sequence of deployment and uniqueness of the underlying pods created by it. Statefulset and its sticky identity is particularly useful while hosting databases on kubernetes, such as MySQL with read-replicas.</p>
 <p>Statefulset is very similar to Deployment, but the main differentiation arises from the fact that Statefulset maintain sticky identity to pods, they are created in order and have persistence across rescheduling cycles. Some features of StatefulSets are:</p>
 <ul>
@@ -100,6 +101,12 @@ Opinions mentioned here are personal and not of my employer.</p><nav class="nav 
 <h2 id="design">Design</h2>
 <p>Kubernetes supports persistent storage via “Container Storage Interface (CSI)” standard. Application pods running on Fargate uses EFS CSI driver to access EFS file system using standard Kubernetes APIs. EFS support at rest data encryption and while using the EFS CSI driver, all data in transit is encrypted by default which is a <strong>compliance requirement</strong> in most regulated industries.</p>
 <p>Whenever a pod running on Fargate is terminated and relaunched, the CSI driver reconnects the EFS file system, even when pod is relaunched in a different AWS Availability Zone, this makes EFS as an appealing solution to provide persistent storage. EFS CSI driver comes pre-installed with Fargate stack and support for EFS is provided out of the box, updates are managed by AWS transparently.</p>
+<figure>
+    <img src="/posts/design.png"/> <figcaption>
+            <h4>Architecture diagram</h4>
+        </figcaption>
+</figure>
+
 <p>The EFS integration with EKS on Fargate leverages three Kubernetes constructs - StorageClass, Persistent Volume (PV) and Persistent Volume Claim (PVC). This allows segragation of duties while operating the cluster where storage admin (or cluster admin) would configure Storage Class, EFS and would create PVs out of this. The developer team would then utilise these available PVs to create PVCs as and when required to deploy applications.</p>
 <blockquote>
 <p>While Kubernetes Storage Class allows volume creation dynamically and statically - in this experiment we will use EFS CSI driver to statically create volume which is the only supported implementation yet with EFS CSI driver.</p>
@@ -109,17 +116,22 @@ Opinions mentioned here are personal and not of my employer.</p><nav class="nav 
 <h3 id="create-vpc-endpoint-for-efs"><strong>Create VPC Endpoint for EFS</strong></h3>
 <p>The EFS VPC endpoint provides secure connectivity to the Amazon EFS API without requiring an internet gateway, NAT instance, or virtual private network (VPN) connection. Follow the guide at : <a href="https://docs.aws.amazon.com/efs/latest/ug/efs-vpc-endpoints.html">https://docs.aws.amazon.com/efs/latest/ug/efs-vpc-endpoints.html</a> to setup a VPC Endpoint for EFS in the same region where EKS on Fargate Cluster resides.</p>
 <h3 id="create-elastic-file-system"><strong>Create Elastic File System</strong></h3>
-<p>First, we need to create EFS file system in the same AWS Region where EKS on Fargate Cluster is residing. Follow <a href="https://docs.aws.amazon.com/efs/latest/ug/getting-started.html">EFS getting start guide</a>, and configure EFS in the same private subnets which are used while creating EKS on Fargate Cluster. Also make sure to add EKS on Fargate security group in EFS configuration. We shall have EFS encryption enabled for this experimentation.</p>
+<p>First, we need to create EFS file system in the same AWS Region where EKS on Fargate Cluster is residing. Follow <a href="https://docs.aws.amazon.com/efs/latest/ug/getting-started.html">EFS getting start guide</a>, and configure EFS in the same private subnets which are used while creating EKS on Fargate Cluster. We shall have EFS encryption enabled for this experimentation.</p>
+<p>Because EFS operates as NFS mount system, we need to add rule to allow NFS traffic in EKS on Fargate security group.</p>
+<p>Also make sure to add EKS on Fargate security group in EFS configuration.</p>
 <p>Finally, note down the FileSystem ID after successful creation which would be needed further down when we will create a persistent storage from it.</p>
 <h3 id="create-fargate-profile-for-statefulsets"><strong>Create Fargate Profile for StatefulSets</strong></h3>
 <p>Fargate allows hands free management for Kubernetes Clusters. To direct EKS to schedule pods on Fargate - we need to create a Fargate profile which is a combination of namespace and labels. In this experiments we are creating a profile with namespace &lsquo;efs-statefulset&rsquo; and all of the objects including pods, service, persistent volume and persistent volume claim will get created in this namespace.</p>
+<blockquote>
+<p>As mentioned in previous <a href="https://k8s-dev.github.io/posts/eksfargate">article</a>, make sure to run these commands from Bastion host created in public subnet in the EKS on Fargate VPC.</p>
+</blockquote>
 <div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws eks create-fargate-profile --fargate-profile-name fargate-statefulset --region us-east-1 --cluster-name private-fargate-cluster --pod-execution-role-arn arn:aws:iam::1234567890:role/private-fargate-pod-execution-role --subnets subnet-01b3ae56696b33747 subnet-0e639397d1f12500a subnet-039f4170f8a820afc --selectors namespace=efs-statefulset
 </code></pre></div><h3 id="storageclass-pv-and-pvc"><strong>StorageClass, PV and PVC</strong></h3>
 <p>StorageClass in equivalent of a storage profile in Kubernetes which provides a way for admins to specify type of storage, quality-of-service, backup policy or any other arbitrary policy.</p>
 <p>Persistent Volume is a Kubernetes resource which allows to store data in persistent way across life-cycle of a pod. PV could be created dynamically or statically using StorageClass. PVC is a request for storage by a Pod. By using PVC object - Kubernetes abstracts away the implementation details of PV.</p>
 <p>Let&rsquo;s make use of the following .yaml to rollout StorageClass, PV and PVC along with a sample application based on amazon-linux:2 image. All it does is to keep redirecting date and time into a file hosted on persistent volume in EFS.</p>
-<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">
-apiVersion: v1
+<p>Ensure to have pushed amazon-linux:2 container image to ECR repo prior to deploying the statefulset. Steps to create, tag and push images to ECR are mentioned in previous post.</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: efs-pv
@@ -180,8 +192,7 @@ spec:
         persistentVolumeClaim:
           claimName: efs-claim
 </code></pre></div><p>Deploy the yaml using the command:</p>
-<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">
-kubectl apply -f &lt;file.yaml&gt;
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply -f &lt;file.yaml&gt;
 </code></pre></div><p>Once deployed, we can see the status of PV and PVC by using the following command:</p>
 <div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">
 $ kubectl get pv -n efs-statefulset
@@ -194,8 +205,7 @@ $ kubectl get pvc -n efs-statefulset
 NAME        STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 efs-claim   Bound    efs-pv   5Gi        RWX            efs-sc         48s
 </code></pre></div><p>This shows that PV is allocated and PVC is in bound state. Also the statefulsets are rolled out and are in running state.</p>
-<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">
-$ kubectl get statefulsets -n efs-statefulset -o wide
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get statefulsets -n efs-statefulset -o wide
 
 NAME          READY   AGE   CONTAINERS   IMAGES
 efs-app-sts   3/3     27m   linux        1234567890.dkr.ecr.us-east-1.amazonaws.com/amazon-linux2
@@ -242,14 +252,14 @@ efs-app-sts-1   0/1     Pending            0          57s
 efs-app-sts-1   0/1     ContainerCreating  0          57s
 efs-app-sts-1   1/1     Running            0          68s
 </code></pre></div><p>Et voilà! After deleting the statefulset, the replication controller triggered a new pod which used the same order to recreate and attach to EFS volume.</p>
-<p>For more information about StatefulSet, see the <a href="%5Bhttps://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set%5D(https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/)">Kubernetes Documentation</a></p>
+<p>For more information about StatefulSet, see the <a href="%5Bhttps://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set%5D(https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/)">Kubernetes Documentation</a>.</p>
 <hr>
 <h3 id="closing">Closing</h3>
 <ul>
 <li>In this article - we created a private EFS Endpoint and used it to host persistent data using StatefulSet in Kubernetes.</li>
 <li>This deployment solves some of the compliance challenges faced by BFSI and other regulated sectors, given the private deployment and encryption support.</li>
 </ul>
-<p>Please let know if you had challenges replicating this in your own environment. Happy Learning!</p>
+<p>Please let know if you had challenges replicating this in your own AWS environment. Happy Learning!</p>
 
 			</div>
 
@@ -264,7 +274,7 @@ efs-app-sts-1   1/1     Running            0          68s
 							
 							<li><a href="/tags/kubernetes">kubernetes</a></li>
 							
-							<li><a href="/tags/statefulset">StatefulSet</a></li>
+							<li><a href="/tags/vpc">VPC</a></li>
 							
 						</ul>
 					

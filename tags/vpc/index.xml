@@ -7,7 +7,17 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>©Jayesh Kumar Tank. Contact me before publishing this content</copyright>
-    <lastBuildDate>Wed, 30 Dec 2020 07:21:05 +0530</lastBuildDate><atom:link href="/tags/vpc/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 10 Jan 2021 17:41:25 +0530</lastBuildDate><atom:link href="/tags/vpc/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS</title>
+      <link>/posts/stateful/</link>
+      <pubDate>Sun, 10 Jan 2021 17:41:25 +0530</pubDate>
+      
+      <guid>/posts/stateful/</guid>
+      <description>Because Kubernetes has transformed the way organisations do application deployments and databases are integral part of the applications and can&amp;rsquo;t be left behind&amp;hellip;
+In a previous article, we discussed the setup for Fully Private EKS on Fargate Cluster fulfilling security requirements of certain regulated industries.</description>
+    </item>
+    
     <item>
       <title>Setup a Fully Private Amazon EKS  on AWS Fargate Cluster</title>
       <link>/posts/eksfargate/</link>

@@ -2,24 +2,24 @@
 <html>
 <head>
 	<meta charset="utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS - k8s-dev</title><meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta itemprop="name" content="Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Deploying Statefulset on Private EKS on Fargate Cluster with EFS - k8s-dev</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="Deploying Statefulset on Private EKS on Fargate Cluster with EFS">
 <meta itemprop="description" content="...allowing data persistence, with low operational overhead!!">
 <meta itemprop="datePublished" content="2021-01-10T17:41:25+05:30" />
 <meta itemprop="dateModified" content="2021-01-10T17:41:25+05:30" />
-<meta itemprop="wordCount" content="1550">
+<meta itemprop="wordCount" content="1551">
 
 
 
 <meta itemprop="keywords" content="EKS,Fargate,kubernetes,VPC," />
-<meta property="og:title" content="Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS" />
+<meta property="og:title" content="Deploying Statefulset on Private EKS on Fargate Cluster with EFS" />
 <meta property="og:description" content="...allowing data persistence, with low operational overhead!!" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/posts/stateful/" />
 <meta property="article:published_time" content="2021-01-10T17:41:25+05:30" />
 <meta property="article:modified_time" content="2021-01-10T17:41:25+05:30" />
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS"/>
+<meta name="twitter:title" content="Deploying Statefulset on Private EKS on Fargate Cluster with EFS"/>
 <meta name="twitter:description" content="...allowing data persistence, with low operational overhead!!"/>
 <link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
 	<link rel="stylesheet" type="text/css" media="screen" href="/css/normalize.css" />
@@ -76,12 +76,12 @@ Opinions mentioned here are personal and not of my employer.</p><nav class="nav 
 					</div>
 				
 				<div class="matter">
-					<h1 class="title">Deploying Private Amazon EKS  on AWS Fargate Cluster with EFS</h1>
+					<h1 class="title">Deploying Statefulset on Private EKS on Fargate Cluster with EFS</h1>
 				</div>
 			</div>
 					
 			<div class="markdown">
-				<p><em>Because Kubernetes has transformed the way organisations do application deployments and databases are integral part of the applications and can&rsquo;t be left behind&hellip;</em></p>
+				<p><em>Because Kubernetes has transformed the way organisations do application deployments and data is an integral part of the applications and can&rsquo;t be left behind&hellip;</em></p>
 <p>In a previous <a href="https://k8s-dev.github.io/posts/eksfargate">article</a>, we discussed the setup for Fully Private EKS on Fargate Cluster fulfilling security requirements of certain regulated industries. This post is a follow up where we will further add the persistent storage and host StatefulSets on this Fully Private Fargate Cluster, while adhering to compliance requirements.</p>
 <p>EFS support for EKS on Fargate is a recent feature, see the <a href="https://aws.amazon.com/blogs/aws/new-aws-fargate-for-amazon-eks-now-supports-amazon-efs">release blog post</a>.</p>
 <h2 id="short-intro-to-statefulset">Short intro to StatefulSet</h2>
